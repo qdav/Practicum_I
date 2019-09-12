@@ -1,8 +1,10 @@
 import pandas as pd
 
 class Question:
+    """ support for 5-answer survey questions from fixed-width file """
     def __init__(self, question_txt, question_prefix, agree_lot_rng,
                  agree_little_rng, neither_rng, dis_little_rng, dis_lot_rng):
+        """creating a Question object requires passing in the location of the column and other metadata"""
         self.question_txt = question_txt
         self.question_prefix = question_prefix
         self.agree_lot_rng = agree_lot_rng
@@ -14,6 +16,7 @@ class Question:
         self.df_question = pd.DataFrame
 
     def getColumnNames(self):
+        """helper function to return column names for 5-answer survey"""
         names = []
         names.append(self.question_prefix + "_agree_lot")
         names.append(self.question_prefix + "_agree_little")
@@ -23,20 +26,25 @@ class Question:
         return names
 
     def loadQuestion(self, master_df):
+        """loads a df of columns containg question answers
+            requires the master_df to contain the same column names"""
         print(f'\nLoading values for question {self.question_txt}')
         self.df_question = master_df[self.getColumnNames()]
 
     def getQuestionFrequency(self):
+        """print the number of times each answer appears for a question"""
         df_temp = self.df_question.copy()
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nFrequency of {self.question_prefix} columns:\n {df_temp[df_temp == 1].count()}')
 
     def countAnswers(self):
+        """count how many times each answer was selected (for validation purposes"""
         df_temp = self.df_question.copy()
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nNumber of check boxes marked for {self.question_prefix} columns:\n {df_temp["total"].value_counts()}')
 
     def createScaledValue(self):
+        """convert five column answers into a single 1-5 value"""
         df_temp = self.df_question.copy()
         df_temp.iloc[:, 0].replace(1, 5, inplace=True)
         df_temp.iloc[:, 1].replace(1, 4, inplace=True)
@@ -47,13 +55,16 @@ class Question:
         return df_temp
 
     def evaluateQuestion(self):
+        """perform validation and summarization of question"""
         self.getQuestionFrequency()
         self.countAnswers()
         self.createScaledValue()
 
 
 class Survey:
+    """reads in 5-answer servey questions from a fixed-width file and evaluates/processes them """
     def __init__(self, file, question_list, encoding):
+        """contextual information for creating survey"""
         self.file = file
         self.question_list = question_list,
         self.encoding = encoding
@@ -61,6 +72,7 @@ class Survey:
         self.data = pd.DataFrame
 
     def readFile(self):
+        """reads in survey file based on any specified question objects"""
         colspecs = [[0, 7]]  # for the id
         names = ['id']
         for question in question_list:
@@ -77,6 +89,7 @@ class Survey:
         return self.data
 
     def processQuestions(self):
+        """loads and evaluates any questions of interest in the survey"""
         for question in question_list:
             question.loadQuestion(self.data)
             question.evaluateQuestion()
