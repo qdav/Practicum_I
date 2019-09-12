@@ -15,7 +15,7 @@ class Question:
 
         self.df_question = pd.DataFrame
 
-    def getColumnNames(self):
+    def get_column_names(self):
         """helper function to return column names for 5-answer survey"""
         names = []
         names.append(self.question_prefix + "_agree_lot")
@@ -25,25 +25,25 @@ class Question:
         names.append(self.question_prefix + "_dis_lot")
         return names
 
-    def loadQuestion(self, master_df):
-        """loads a df of columns containg question answers
+    def load_question(self, master_df):
+        """loads a df of columns containingg question answers
             requires the master_df to contain the same column names"""
         print(f'\nLoading values for question {self.question_txt}')
-        self.df_question = master_df[self.getColumnNames()]
+        self.df_question = master_df[self.get_column_names()]
 
-    def getQuestionFrequency(self):
-        """print the number of times each answer appears for a question"""
+    def get_question_fequency(self):
+        """print the number of times each answer appears for a question (for validation purposes)"""
         df_temp = self.df_question.copy()
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nFrequency of {self.question_prefix} columns:\n {df_temp[df_temp == 1].count()}')
 
-    def countAnswers(self):
-        """count how many times each answer was selected (for validation purposes"""
+    def count_answers(self):
+        """count how many times each answer was selected (for validation purposes)"""
         df_temp = self.df_question.copy()
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nNumber of check boxes marked for {self.question_prefix} columns:\n {df_temp["total"].value_counts()}')
 
-    def createScaledValue(self):
+    def create_scaled_value(self):
         """convert five column answers into a single 1-5 value"""
         df_temp = self.df_question.copy()
         df_temp.iloc[:, 0].replace(1, 5, inplace=True)
@@ -54,11 +54,11 @@ class Question:
         print(f'\nFrequency of {self.question_prefix} after 1-5 scale:\n {df_temp["scale_value"].value_counts()}')
         return df_temp
 
-    def evaluateQuestion(self):
+    def evaluate_question(self):
         """perform validation and summarization of question"""
-        self.getQuestionFrequency()
-        self.countAnswers()
-        self.createScaledValue()
+        self.get_question_fequency()
+        self.count_answers()
+        self.create_scaled_value()
 
 
 class Survey:
@@ -71,7 +71,7 @@ class Survey:
 
         self.data = pd.DataFrame
 
-    def readFile(self):
+    def read_file(self):
         """reads in survey file based on any specified question objects"""
         colspecs = [[0, 7]]  # for the id
         names = ['id']
@@ -81,18 +81,18 @@ class Survey:
             colspecs.append(question.neither_rng)
             colspecs.append(question.dis_little_rng)
             colspecs.append(question.dis_lot_rng)
-            names.extend(question.getColumnNames())
+            names.extend(question.get_column_names())
 
         self.data = pd.read_fwf(self.file, colspecs=colspecs, encoding=self.encoding, names=names, header=None)
         self.data.fillna(0, inplace=True)
         self.data = self.data.astype(int)
         return self.data
 
-    def processQuestions(self):
+    def process_questions(self):
         """loads and evaluates any questions of interest in the survey"""
         for question in question_list:
-            question.loadQuestion(self.data)
-            question.evaluateQuestion()
+            question.load_question(self.data)
+            question.evaluate_question()
 
 
 question_list = list()
@@ -102,5 +102,5 @@ question_list.append(Question('CMPTRS CONFUSE ME,NEVER GET USED TO THEM', 'compc
                               [6950, 6951], [6967, 6968], [7001, 7002], [7018, 7019], [7035, 7036]))
 
 exercise1 = Survey('FA15_Data.txt', question_list, 'utf8')
-exercise1.readFile()
-exercise1.processQuestions()
+exercise1.read_file()
+exercise1.process_questions()
