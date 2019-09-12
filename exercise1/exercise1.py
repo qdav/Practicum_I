@@ -4,7 +4,7 @@ class Question:
     """ support for 5-answer survey questions from fixed-width file """
     def __init__(self, question_txt, question_prefix, agree_lot_rng,
                  agree_little_rng, neither_rng, dis_little_rng, dis_lot_rng):
-        """creating a Question object requires passing in the location of the column and other metadata"""
+        """creating a Question object requires passing in the location of the columns and other metadata"""
         self.question_txt = question_txt
         self.question_prefix = question_prefix
         self.agree_lot_rng = agree_lot_rng
