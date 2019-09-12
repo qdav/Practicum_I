@@ -4,7 +4,7 @@ class Question:
     """ support for 5-answer survey questions from fixed-width file """
     def __init__(self, question_txt, question_prefix, agree_lot_rng,
                  agree_little_rng, neither_rng, dis_little_rng, dis_lot_rng):
-        """creating a Question object requires passing in the location of the columns and other metadata"""
+        """Create a Question object by passing in the location of the columns and other metadata."""
         self.question_txt = question_txt
         self.question_prefix = question_prefix
         self.agree_lot_rng = agree_lot_rng
@@ -16,7 +16,7 @@ class Question:
         self.df_question = pd.DataFrame
 
     def get_column_names(self):
-        """helper function to return column names for 5-answer survey"""
+        """Helper function to return column names for 5-answer survey."""
         names = []
         names.append(self.question_prefix + "_agree_lot")
         names.append(self.question_prefix + "_agree_little")
@@ -26,25 +26,24 @@ class Question:
         return names
 
     def load_question(self, master_df):
-        """loads a df of columns containingg question answers
-            requires the master_df to contain the same column names"""
+        """Loads a df of columns containing question answers. Requires the master_df to contain the same column names"""
         print(f'\nLoading values for question {self.question_txt}')
         self.df_question = master_df[self.get_column_names()]
 
     def get_question_fequency(self):
-        """print the number of times each answer appears for a question (for validation purposes)"""
+        """Print the number of times each answer appears for a question (for validation purposes)."""
         df_temp = self.df_question.copy()
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nFrequency of {self.question_prefix} columns:\n {df_temp[df_temp == 1].count()}')
 
     def count_answers(self):
-        """count how many times each answer was selected (for validation purposes)"""
+        """Count how many times each answer was selected (for validation purposes)."""
         df_temp = self.df_question.copy()
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nNumber of check boxes marked for {self.question_prefix} columns:\n {df_temp["total"].value_counts()}')
 
     def create_scaled_value(self):
-        """convert five column answers into a single 1-5 value"""
+        """Convert five column answers into a single 1-5 value."""
         df_temp = self.df_question.copy()
         df_temp.iloc[:, 0].replace(1, 5, inplace=True)
         df_temp.iloc[:, 1].replace(1, 4, inplace=True)
@@ -55,16 +54,16 @@ class Question:
         return df_temp
 
     def evaluate_question(self):
-        """perform validation and summarization of question"""
+        """Perform validation and summarization of the question."""
         self.get_question_fequency()
         self.count_answers()
         self.create_scaled_value()
 
 
 class Survey:
-    """reads in 5-answer servey questions from a fixed-width file and evaluates/processes them """
+    """Reads in 5-answer servey questions from a fixed-width file and evaluates/processes them."""
     def __init__(self, file, question_list, encoding):
-        """contextual information for creating survey"""
+        """File, questions, and encoding for the Survey"""
         self.file = file
         self.question_list = question_list,
         self.encoding = encoding
@@ -72,7 +71,7 @@ class Survey:
         self.data = pd.DataFrame
 
     def read_file(self):
-        """reads in survey file based on any specified question objects"""
+        """Reads in survey file based on any specified questions."""
         colspecs = [[0, 7]]  # for the id
         names = ['id']
         for question in question_list:
@@ -89,7 +88,7 @@ class Survey:
         return self.data
 
     def process_questions(self):
-        """loads and evaluates any questions of interest in the survey"""
+        """loads and evaluates any questions of interest in the survey."""
         for question in question_list:
             question.load_question(self.data)
             question.evaluate_question()
