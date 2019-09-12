@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 class Question:
     def __init__(self, question_txt, question_prefix, agree_lot_rng,
