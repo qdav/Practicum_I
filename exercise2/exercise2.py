@@ -1,8 +1,11 @@
 import pandas as pd
 import sklearn
-from factor_analyzer import FactorAnalyzer, Rotator
-from sklearn.decomposition import FactorAnalysis
+from factor_analyzer import FactorAnalyzer
+from factor_analyzer.factor_analyzer import calculate_kmo
+from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
 
 class Question:
@@ -135,7 +138,7 @@ class FactorExplore:
 
     def get_barlett_sphericity(self):
         """ Check Bartlett Sphericity """
-        from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity
+
         chi_square_value, p_value = calculate_bartlett_sphericity(scaled_df)
         if self.verbose:
             print(f'Bartlett Sphericity chi square value: {chi_square_value}\n')
@@ -144,7 +147,6 @@ class FactorExplore:
 
     def get_kmo(self):
         """ Check KMO """
-        from factor_analyzer.factor_analyzer import calculate_kmo
         kmo_all, kmo_model = calculate_kmo(scaled_df)
         if self.verbose:
             print(f'KMO Model:\n{kmo_model}')
@@ -183,6 +185,39 @@ class FactorExplore:
         temp_df = pd.DataFrame(self.fa.transform(df))
         return temp_df
 
+class ClusterExplore():
+    def __init__(self ):
+        pass
+
+    def plot_elbow(self, df, n_clusters=10):
+        # Elbow method from https://towardsdatascience.com/k-means-clustering-algorithm-applications-evaluation-methods-and-drawbacks-aa03e644b48a
+        sse = []
+        list_k = list(range(1, n_clusters))
+
+        for k in list_k:
+            km = KMeans(n_clusters=k)
+            km.fit(df)
+            sse.append(km.inertia_)
+        # Plot sse against k
+        plt.figure(figsize=(6, 6))
+        plt.plot(list_k, sse, '-o')
+        plt.xlabel(r'Number of clusters *k*')
+        plt.ylabel('Sum of squared distance')
+        plt.show()
+
+    def get_silhouette(self, factor_df, n_clusters=10):
+        # https://stackoverflow.com/questions/51138686/how-to-use-silhouette-score-in-k-means-clustering-from-sklearn-library
+        range_n_clusters = list(range(2, 10))
+        for n_clusters in range_n_clusters:
+            clusterer = KMeans(n_clusters=n_clusters)
+            preds = clusterer.fit_predict(factor_df)
+            #centers = clusterer.cluster_centers_
+
+            score = silhouette_score(factor_df, preds, metric='euclidean')
+            print("For n_clusters = {}, silhouette score is {})".format(n_clusters, score))
+
+
+# configure/load survey and questions
 question_list = list()
 question_list.append(Question("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
                               [6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]))
@@ -205,12 +240,11 @@ question_list.append(Question("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'conne
 
 survey = Survey('FA15_Data.txt', question_list, 'utf8', verbose=True)
 survey.evaluate_questions()
-
-# get scaled values and drop missing value rows
 scaled_df = survey.get_scaled_values()
 #scaled_df.dropna(inplace=True)
 scaled_df.info()
 
+# exploratory factor analysis
 fe = FactorExplore(df=scaled_df, rotation='varimax', method='principal', n_factors=2, impute='drop', verbose=True)
 fe.get_barlett_sphericity()
 fe.get_kmo()
@@ -218,29 +252,19 @@ ev = fe.get_eigenvalues()
 fe.scree_plot(ev)
 fe.get_factor_loadings()
 fe.get_communalities()
-trans_df = fe.get_transformed_data(scaled_df)
+factor_df = fe.get_transformed_data(scaled_df)
+
+# clustering
+ce = ClusterExplore
+ce.plot_elbow(ce, factor_df)
+ce.get_silhouette(ce, factor_df)
+
 
 
 
 b = 1
 
-# factor_loadings = pd.DataFrame(fa.loadings_).set_index(scaled_df.columns)
-# print(f'Factor Loadings\n {factor_loadings}')
 
-# print(f'Communalities\n {pd.DataFrame(fa.get_communalities())}\n')
-# ev, v = fa.get_eigenvalues()
-# print(f'Eigenvalues {ev}\n')
-
-# plt.scatter(range(1,9), ev)
-# plt.plot(range(1,9), ev)
-# plt.title("Scree Plot")
-# plt.xlabel("Factors")
-# plt.ylabel("Eigenvalue")
-# plt.grid()
-# plt.show()
-
-# factor = FactorAnalysis().fit(scaled_df)
-# print(factor.compnonents_)
 
 # fa1 = FactorAnalyzer(rotation=None)
 # fa1.fit(scaled_df)
