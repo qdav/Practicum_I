@@ -61,7 +61,7 @@ class Question:
 
 
 class Survey:
-    """Reads in 5-answer servey questions from a fixed-width file and evaluates/processes them."""
+    """Reads in 5-answer servey questions from a fixed-width file and evaluates/processes"""
     def __init__(self, file, question_list, encoding):
         """File, questions, and encoding for the Survey"""
         self.file = file
