@@ -1,5 +1,4 @@
 import pandas as pd
-import sklearn
 from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_kmo
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity
@@ -7,19 +6,86 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
-
 class Question:
+    def __init__(self):
+        pass
+
+    def get_column_names(self):
+        pass
+
+    def get_column_range(self):
+        pass
+
+    def load_questions(self):
+        pass
+
+    def get_question_fequency(self):
+        pass
+
+    def count_answers(self):
+        pass
+
+    def create_final_value(self):
+        pass
+
+    def evaluate_question(self):
+        pass
+
+
+class SingleValueQuestion(Question):
+    def __init__(self, question_txt, question_column, col_range):
+        self.question_txt = question_txt
+        self.question_column = question_column
+        self.col_range = col_range
+
+        self.df_question = pd.DataFrame
+
+    def get_column_names(self):
+        names = []
+        names.append(self.question_column)
+        return names
+
+    def get_column_range(self):
+        return self.col_range
+
+    def load_question(self, master_df):
+        self.df_question = master_df[self.get_column_names()]
+
+    def get_question_fequency(self):
+        df_temp = self.df_question.copy()
+        df_temp['total'] = df_temp.sum(axis=1)  # total column
+        print(f'\nFrequency of {self.question_column} columns:\n {df_temp[df_temp == 1].count()}')
+
+    def count_answers(self):
+        """Count how many times each answer was selected (for validation purposes)."""
+        df_temp = self.df_question.copy()
+        df_temp['total'] = df_temp.sum(axis=1)  # total column
+        print(f'\nNumber of check boxes marked for {self.question_column} columns:\n {df_temp["total"].value_counts()}')
+
+    def create_final_value(self):
+        df_temp = self.df_question.copy()
+        #df_temp[self.question_column] = df_temp.iloc[:, 0].apply(max, axis=1)
+        print(f'\nFrequency of {self.question_column}:\n {df_temp[self.question_column].value_counts()}')
+        return df_temp[self.question_column]
+
+    def evaluate_question(self):
+        self.get_question_fequency()
+        self.count_answers()
+        #self.create_scaled_value()
+
+
+class OpinionQuestion(Question):
     """ support for 5-answer survey questions from fixed-width file """
-    def __init__(self, question_txt, question_prefix, agree_lot_rng,
-                 agree_little_rng, neither_rng, dis_little_rng, dis_lot_rng):
+    def __init__(self, question_txt, question_prefix, col_range):
         """Create a Question object by passing in the location of the columns and other metadata."""
         self.question_txt = question_txt
         self.question_prefix = question_prefix
-        self.agree_lot_rng = agree_lot_rng
-        self.agree_little_rng = agree_little_rng
-        self.neither_rng = neither_rng
-        self.dis_little_rng = dis_little_rng
-        self.dis_lot_rng = dis_lot_rng
+        self.col_range = col_range
+        self.agree_lot_rng = col_range[0]
+        self.agree_little_rng = col_range[1]
+        self.neither_rng = col_range[2]
+        self.dis_little_rng = col_range[3]
+        self.dis_lot_rng = col_range[4]
 
         self.df_question = pd.DataFrame
 
@@ -33,10 +99,13 @@ class Question:
         names.append(self.question_prefix + "_dis_lot")
         return names
 
-    def load_question(self, master_df, verbose=True):
+    def get_column_range(self):
+        return self.col_range
+
+    def load_question(self, master_df):
         """Loads a df of columns containing question answers. Requires the master_df to contain the same column names"""
-        if verbose:
-            print(f'\nLoading values for question {self.question_txt}')
+        #if verbose:
+        #    print(f'\nLoading values for question {self.question_txt}')
         self.df_question = master_df[self.get_column_names()]
 
     def get_question_fequency(self):
@@ -51,7 +120,7 @@ class Question:
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nNumber of check boxes marked for {self.question_prefix} columns:\n {df_temp["total"].value_counts()}')
 
-    def create_scaled_value(self):
+    def create_final_value(self):
         """Convert five column answers into a single 1-5 value."""
         df_temp = self.df_question.copy()
         df_temp.iloc[:, 0].replace(1, 5, inplace=True)
@@ -90,11 +159,11 @@ class Survey:
         colspecs = [[0, 7]]  # for the id
         names = ['id']
         for question in question_list:
-            colspecs.append(question.agree_lot_rng)
-            colspecs.append(question.agree_little_rng)
-            colspecs.append(question.neither_rng)
-            colspecs.append(question.dis_little_rng)
-            colspecs.append(question.dis_lot_rng)
+            colspecs.extend(question.col_range)
+            #colspecs.append(question.agree_little_rng)
+            #colspecs.append(question.neither_rng)
+            #colspecs.append(question.dis_little_rng)
+            #colspecs.append(question.dis_lot_rng)
             names.extend(question.get_column_names())
 
         self.data = pd.read_fwf(self.file, colspecs=colspecs, encoding=self.encoding, names=names, header=None)
@@ -105,7 +174,7 @@ class Survey:
     def load_questions(self, verbose=True):
         """Loads any questions of interest in the survey."""
         for question in question_list:
-            question.load_question(self.data, verbose)
+            question.load_question(self.data)
 
     def evaluate_questions(self):
         """Evaluates questions in the survey for frequency, selected answers."""
@@ -116,7 +185,7 @@ class Survey:
         """Convert questions into a single 1-5 value."""
         temp_scaled_val = []
         for question in question_list:
-            temp_scaled_val.append(question.create_scaled_value())
+            temp_scaled_val.append(question.create_final_value())
         return pd.DataFrame(temp_scaled_val).transpose()
 
 
@@ -173,8 +242,8 @@ class FactorExplore:
         return df_eignevalues
 
     def scree_plot(self, ev):
-        plt.scatter(range(1,9), ev)
-        plt.plot(range(1,9), ev)
+        plt.scatter(range(1,len(ev)+1), ev)
+        plt.plot(range(1,len(ev)+1), ev)
         plt.title("Scree Plot")
         plt.xlabel("Factors")
         plt.ylabel("Eigenvalue")
@@ -189,8 +258,9 @@ class ClusterExplore():
     def __init__(self ):
         pass
 
+
     def plot_elbow(self, df, n_clusters=10):
-        # Elbow method from https://towardsdatascience.com/k-means-clustering-algorithm-applications-evaluation-methods-and-drawbacks-aa03e644b48a
+        # https://towardsdatascience.com/k-means-clustering-algorithm-applications-evaluation-methods-and-drawbacks-aa03e644b48a
         sse = []
         list_k = list(range(1, n_clusters))
 
@@ -204,6 +274,7 @@ class ClusterExplore():
         plt.xlabel(r'Number of clusters *k*')
         plt.ylabel('Sum of squared distance')
         plt.show()
+
 
     def get_silhouette(self, factor_df, n_clusters=10):
         # https://stackoverflow.com/questions/51138686/how-to-use-silhouette-score-in-k-means-clustering-from-sklearn-library
@@ -219,24 +290,25 @@ class ClusterExplore():
 
 # configure/load survey and questions
 question_list = list()
-question_list.append(Question("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
-                              [6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]))
-question_list.append(Question("PAY ANYTHING FOR ELCTRNC PROD I WANT", 'anyprice',
-                              [6946, 6947], [6963, 6964], [6997, 6998], [7014, 7015], [7031, 7032]))
-question_list.append(Question("I TRY KEEP UP/DEVELOPMENTS IN TECHNOLOGY", 'keepup',
-                              [6953, 6954], [6970, 6971], [7004, 7005], [7021, 7022], [7038, 7039]))
-question_list.append(Question("LOVE TO BUY NEW GADGETS AND APPLIANCES", 'lovenew',
-                              [6954, 6955], [6971, 6972], [7005, 7006], [7022, 7023], [7039, 7040]))
+question_list.append(OpinionQuestion("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
+                              [[6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]]))
+question_list.append(OpinionQuestion("PAY ANYTHING FOR ELCTRNC PROD I WANT", 'anyprice',
+                              [[6946, 6947], [6963, 6964], [6997, 6998], [7014, 7015], [7031, 7032]]))
+question_list.append(OpinionQuestion("I TRY KEEP UP/DEVELOPMENTS IN TECHNOLOGY", 'keepup',
+                              [[6953, 6954], [6970, 6971], [7004, 7005], [7021, 7022], [7038, 7039]]))
+question_list.append(OpinionQuestion("LOVE TO BUY NEW GADGETS AND APPLIANCES", 'lovenew',
+                              [[6954, 6955], [6971, 6972], [7005, 7006], [7022, 7023], [7039, 7040]]))
 
-question_list.append(Question("FRIENDSHIPS WOULDN'T BE CLOSE W/O CELL", 'cellfriend',
-                              [3852, 3853], [3876, 3877], [3924, 3925], [3948, 3949], [3972, 3973]))
-question_list.append(Question("MY CELL PHONE CONNECTS TO SOCIAL WORLD", 'cellsocial',
-                              [3857, 3858], [3881, 3882], [3929, 3930], [3953, 3954], [3977, 3978]))
-question_list.append(Question("CELL PHONE IS AN EXPRESSION OF WHO I AM", 'cellexpress',
-                              [3860, 3861], [3884, 3885], [3932, 3933], [3956, 3957], [3980, 3981]))
-question_list.append(Question("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
-                              [3867, 3868], [3891, 3892], [3939, 3940], [3963, 3964], [3987, 3988]))
+question_list.append(OpinionQuestion("FRIENDSHIPS WOULDN'T BE CLOSE W/O CELL", 'cellfriend',
+                              [[3852, 3853], [3876, 3877], [3924, 3925], [3948, 3949], [3972, 3973]]))
+question_list.append(OpinionQuestion("MY CELL PHONE CONNECTS TO SOCIAL WORLD", 'cellsocial',
+                              [[3857, 3858], [3881, 3882], [3929, 3930], [3953, 3954], [3977, 3978]]))
+question_list.append(OpinionQuestion("CELL PHONE IS AN EXPRESSION OF WHO I AM", 'cellexpress',
+                              [[3860, 3861], [3884, 3885], [3932, 3933], [3956, 3957], [3980, 3981]]))
+question_list.append(OpinionQuestion("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
+                              [[3867, 3868], [3891, 3892], [3939, 3940], [3963, 3964], [3987, 3988]]))
 
+question_list.append(SingleValueQuestion("test", 'test', [[5000, 5001]]))
 
 survey = Survey('FA15_Data.txt', question_list, 'utf8', verbose=True)
 survey.evaluate_questions()
@@ -255,9 +327,9 @@ fe.get_communalities()
 factor_df = fe.get_transformed_data(scaled_df)
 
 # clustering
-ce = ClusterExplore
-ce.plot_elbow(ce, factor_df)
-ce.get_silhouette(ce, factor_df)
+ce = ClusterExplore()
+ce.plot_elbow(factor_df)
+ce.get_silhouette(factor_df)
 
 
 
