@@ -43,7 +43,6 @@ class Question:
 
 
 class SingleValueQuestion(Question):
-
     def get_column_names(self):
         names = []
         names.append(self.question_column)
@@ -92,7 +91,7 @@ class Survey:
     def __init__(self, file, question_list, encoding, read_file=True, load_questions=True, verbose=True):
         """File, questions, and encoding for the Survey"""
         self.file = file
-        self.question_list = question_list,
+        self.question_list = question_list
         self.encoding = encoding
 
         self.data = pd.DataFrame
@@ -107,8 +106,8 @@ class Survey:
         """Reads in survey file based on any specified questions."""
         colspecs = [[0, 7]]  # for the id
         names = ['id']
-        for question in question_list:
-            colspecs.extend(question.col_range)
+        for question in self.question_list:
+            colspecs.extend(question.get_column_range())
             names.extend(question.get_column_names())
 
         self.data = pd.read_fwf(self.file, colspecs=colspecs, encoding=self.encoding, names=names, header=None)
@@ -118,18 +117,18 @@ class Survey:
 
     def load_questions(self, verbose=True):
         """Loads any questions of interest in the survey."""
-        for question in question_list:
+        for question in self.question_list:
             question.load_question(self.data)
 
     def evaluate_questions(self):
         """Evaluates questions in the survey for frequency, selected answers."""
-        for question in question_list:
+        for question in self.question_list:
             question.evaluate_question()
 
     def get_scaled_values(self):
         """Convert questions into a single 1-5 value."""
         temp_scaled_val = []
-        for question in question_list:
+        for question in self.question_list:
             temp_scaled_val.append(question.create_final_value())
         return pd.DataFrame(temp_scaled_val).transpose()
 
@@ -234,28 +233,28 @@ class ClusterExplore():
 
 
 # configure/load survey and questions
-question_list = list()
-question_list.append(OpinionQuestion("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
+qlist = list()
+qlist.append(OpinionQuestion("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
                               [[6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]]))
-question_list.append(OpinionQuestion("PAY ANYTHING FOR ELCTRNC PROD I WANT", 'anyprice',
+qlist.append(OpinionQuestion("PAY ANYTHING FOR ELCTRNC PROD I WANT", 'anyprice',
                               [[6946, 6947], [6963, 6964], [6997, 6998], [7014, 7015], [7031, 7032]]))
-question_list.append(OpinionQuestion("I TRY KEEP UP/DEVELOPMENTS IN TECHNOLOGY", 'keepup',
+qlist.append(OpinionQuestion("I TRY KEEP UP/DEVELOPMENTS IN TECHNOLOGY", 'keepup',
                               [[6953, 6954], [6970, 6971], [7004, 7005], [7021, 7022], [7038, 7039]]))
-question_list.append(OpinionQuestion("LOVE TO BUY NEW GADGETS AND APPLIANCES", 'lovenew',
+qlist.append(OpinionQuestion("LOVE TO BUY NEW GADGETS AND APPLIANCES", 'lovenew',
                               [[6954, 6955], [6971, 6972], [7005, 7006], [7022, 7023], [7039, 7040]]))
 
-question_list.append(OpinionQuestion("FRIENDSHIPS WOULDN'T BE CLOSE W/O CELL", 'cellfriend',
+qlist.append(OpinionQuestion("FRIENDSHIPS WOULDN'T BE CLOSE W/O CELL", 'cellfriend',
                               [[3852, 3853], [3876, 3877], [3924, 3925], [3948, 3949], [3972, 3973]]))
-question_list.append(OpinionQuestion("MY CELL PHONE CONNECTS TO SOCIAL WORLD", 'cellsocial',
+qlist.append(OpinionQuestion("MY CELL PHONE CONNECTS TO SOCIAL WORLD", 'cellsocial',
                               [[3857, 3858], [3881, 3882], [3929, 3930], [3953, 3954], [3977, 3978]]))
-question_list.append(OpinionQuestion("CELL PHONE IS AN EXPRESSION OF WHO I AM", 'cellexpress',
+qlist.append(OpinionQuestion("CELL PHONE IS AN EXPRESSION OF WHO I AM", 'cellexpress',
                               [[3860, 3861], [3884, 3885], [3932, 3933], [3956, 3957], [3980, 3981]]))
-question_list.append(OpinionQuestion("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
+qlist.append(OpinionQuestion("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
                               [[3867, 3868], [3891, 3892], [3939, 3940], [3963, 3964], [3987, 3988]]))
 
-question_list.append(SingleValueQuestion("CH. OF JESUS CHRIST OF LATTER DAY SNTS", 'lds', [[2650, 2651]]))
+qlist.append(SingleValueQuestion("CH. OF JESUS CHRIST OF LATTER DAY SNTS", 'lds', [[2650, 2651]]))
 
-survey = Survey('FA15_Data.txt', question_list, 'utf8', verbose=True)
+survey = Survey('FA15_Data.txt', qlist, 'utf8', verbose=True)
 survey.evaluate_questions()
 scaled_df = survey.get_scaled_values()
 #scaled_df.dropna(inplace=True)
