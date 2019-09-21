@@ -7,32 +7,6 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
 class Question:
-    def __init__(self):
-        pass
-
-    def get_column_names(self):
-        pass
-
-    def get_column_range(self):
-        pass
-
-    def load_questions(self):
-        pass
-
-    def get_question_fequency(self):
-        pass
-
-    def count_answers(self):
-        pass
-
-    def create_final_value(self):
-        pass
-
-    def evaluate_question(self):
-        pass
-
-
-class SingleValueQuestion(Question):
     def __init__(self, question_txt, question_column, col_range):
         self.question_txt = question_txt
         self.question_column = question_column
@@ -41,9 +15,7 @@ class SingleValueQuestion(Question):
         self.df_question = pd.DataFrame
 
     def get_column_names(self):
-        names = []
-        names.append(self.question_column)
-        return names
+        pass
 
     def get_column_range(self):
         return self.col_range
@@ -57,68 +29,52 @@ class SingleValueQuestion(Question):
         print(f'\nFrequency of {self.question_column} columns:\n {df_temp[df_temp == 1].count()}')
 
     def count_answers(self):
-        """Count how many times each answer was selected (for validation purposes)."""
         df_temp = self.df_question.copy()
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nNumber of check boxes marked for {self.question_column} columns:\n {df_temp["total"].value_counts()}')
 
     def create_final_value(self):
-        df_temp = self.df_question.copy()
-        #df_temp[self.question_column] = df_temp.iloc[:, 0].apply(max, axis=1)
-        print(f'\nFrequency of {self.question_column}:\n {df_temp[self.question_column].value_counts()}')
-        return df_temp[self.question_column]
+        pass
 
     def evaluate_question(self):
+        """Perform validation and summarization of the question."""
         self.get_question_fequency()
         self.count_answers()
-        #self.create_scaled_value()
+
+
+class SingleValueQuestion(Question):
+
+    def get_column_names(self):
+        names = []
+        names.append(self.question_column)
+        return names
+
+    def create_final_value(self):
+        df_temp = self.df_question.copy()
+        print(f'\nFrequency of {self.question_column}:\n {df_temp[self.question_column].value_counts()}')
+        return df_temp[self.question_column]
 
 
 class OpinionQuestion(Question):
     """ support for 5-answer survey questions from fixed-width file """
     def __init__(self, question_txt, question_prefix, col_range):
         """Create a Question object by passing in the location of the columns and other metadata."""
-        self.question_txt = question_txt
-        self.question_prefix = question_prefix
-        self.col_range = col_range
+        super().__init__(question_txt, question_prefix, col_range)
         self.agree_lot_rng = col_range[0]
         self.agree_little_rng = col_range[1]
         self.neither_rng = col_range[2]
         self.dis_little_rng = col_range[3]
         self.dis_lot_rng = col_range[4]
 
-        self.df_question = pd.DataFrame
-
     def get_column_names(self):
         """Helper function to return column names for 5-answer survey."""
         names = []
-        names.append(self.question_prefix + "_agree_lot")
-        names.append(self.question_prefix + "_agree_little")
-        names.append(self.question_prefix + "_neither")
-        names.append(self.question_prefix + "_dis_little")
-        names.append(self.question_prefix + "_dis_lot")
+        names.append(self.question_column + "_agree_lot")
+        names.append(self.question_column + "_agree_little")
+        names.append(self.question_column + "_neither")
+        names.append(self.question_column + "_dis_little")
+        names.append(self.question_column + "_dis_lot")
         return names
-
-    def get_column_range(self):
-        return self.col_range
-
-    def load_question(self, master_df):
-        """Loads a df of columns containing question answers. Requires the master_df to contain the same column names"""
-        #if verbose:
-        #    print(f'\nLoading values for question {self.question_txt}')
-        self.df_question = master_df[self.get_column_names()]
-
-    def get_question_fequency(self):
-        """Print the number of times each answer appears for a question (for validation purposes)."""
-        df_temp = self.df_question.copy()
-        df_temp['total'] = df_temp.sum(axis=1)  # total column
-        print(f'\nFrequency of {self.question_prefix} columns:\n {df_temp[df_temp == 1].count()}')
-
-    def count_answers(self):
-        """Count how many times each answer was selected (for validation purposes)."""
-        df_temp = self.df_question.copy()
-        df_temp['total'] = df_temp.sum(axis=1)  # total column
-        print(f'\nNumber of check boxes marked for {self.question_prefix} columns:\n {df_temp["total"].value_counts()}')
 
     def create_final_value(self):
         """Convert five column answers into a single 1-5 value."""
@@ -127,16 +83,9 @@ class OpinionQuestion(Question):
         df_temp.iloc[:, 1].replace(1, 4, inplace=True)
         df_temp.iloc[:, 2].replace(1, 3, inplace=True)
         df_temp.iloc[:, 3].replace(1, 2, inplace=True)
-        df_temp[self.question_prefix] = df_temp.iloc[:, 0:5].apply(max, axis=1)
-        print(f'\nFrequency of {self.question_prefix} after 1-5 scale:\n {df_temp[self.question_prefix].value_counts()}')
-        return df_temp[self.question_prefix]
-
-    def evaluate_question(self):
-        """Perform validation and summarization of the question."""
-        self.get_question_fequency()
-        self.count_answers()
-        #self.create_scaled_value()
-
+        df_temp[self.question_column] = df_temp.iloc[:, 0:5].apply(max, axis=1)
+        print(f'\nFrequency of {self.question_column} after 1-5 scale:\n {df_temp[self.question_column].value_counts()}')
+        return df_temp[self.question_column]
 
 class Survey:
     """Reads in 5-answer servey questions from a fixed-width file and evaluates/processes"""
@@ -160,10 +109,6 @@ class Survey:
         names = ['id']
         for question in question_list:
             colspecs.extend(question.col_range)
-            #colspecs.append(question.agree_little_rng)
-            #colspecs.append(question.neither_rng)
-            #colspecs.append(question.dis_little_rng)
-            #colspecs.append(question.dis_lot_rng)
             names.extend(question.get_column_names())
 
         self.data = pd.read_fwf(self.file, colspecs=colspecs, encoding=self.encoding, names=names, header=None)
@@ -308,7 +253,7 @@ question_list.append(OpinionQuestion("CELL PHONE IS AN EXPRESSION OF WHO I AM", 
 question_list.append(OpinionQuestion("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
                               [[3867, 3868], [3891, 3892], [3939, 3940], [3963, 3964], [3987, 3988]]))
 
-question_list.append(SingleValueQuestion("test", 'test', [[5000, 5001]]))
+question_list.append(SingleValueQuestion("CH. OF JESUS CHRIST OF LATTER DAY SNTS", 'lds', [[2650, 2651]]))
 
 survey = Survey('FA15_Data.txt', question_list, 'utf8', verbose=True)
 survey.evaluate_questions()
