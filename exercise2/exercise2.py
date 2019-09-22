@@ -234,25 +234,61 @@ class ClusterExplore():
 
 # configure/load survey and questions
 qlist = list()
-qlist.append(OpinionQuestion("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
-                              [[6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]]))
-qlist.append(OpinionQuestion("PAY ANYTHING FOR ELCTRNC PROD I WANT", 'anyprice',
-                              [[6946, 6947], [6963, 6964], [6997, 6998], [7014, 7015], [7031, 7032]]))
-qlist.append(OpinionQuestion("I TRY KEEP UP/DEVELOPMENTS IN TECHNOLOGY", 'keepup',
-                              [[6953, 6954], [6970, 6971], [7004, 7005], [7021, 7022], [7038, 7039]]))
-qlist.append(OpinionQuestion("LOVE TO BUY NEW GADGETS AND APPLIANCES", 'lovenew',
-                              [[6954, 6955], [6971, 6972], [7005, 7006], [7022, 7023], [7039, 7040]]))
 
-qlist.append(OpinionQuestion("FRIENDSHIPS WOULDN'T BE CLOSE W/O CELL", 'cellfriend',
-                              [[3852, 3853], [3876, 3877], [3924, 3925], [3948, 3949], [3972, 3973]]))
-qlist.append(OpinionQuestion("MY CELL PHONE CONNECTS TO SOCIAL WORLD", 'cellsocial',
-                              [[3857, 3858], [3881, 3882], [3929, 3930], [3953, 3954], [3977, 3978]]))
-qlist.append(OpinionQuestion("CELL PHONE IS AN EXPRESSION OF WHO I AM", 'cellexpress',
-                              [[3860, 3861], [3884, 3885], [3932, 3933], [3956, 3957], [3980, 3981]]))
-qlist.append(OpinionQuestion("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
-                              [[3867, 3868], [3891, 3892], [3939, 3940], [3963, 3964], [3987, 3988]]))
+# qlist.append(OpinionQuestion("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
+#                               [[6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]]))
+# qlist.append(OpinionQuestion("PAY ANYTHING FOR ELCTRNC PROD I WANT", 'anyprice',
+#                               [[6946, 6947], [6963, 6964], [6997, 6998], [7014, 7015], [7031, 7032]]))
+# qlist.append(OpinionQuestion("I TRY KEEP UP/DEVELOPMENTS IN TECHNOLOGY", 'keepup',
+#                               [[6953, 6954], [6970, 6971], [7004, 7005], [7021, 7022], [7038, 7039]]))
+# qlist.append(OpinionQuestion("LOVE TO BUY NEW GADGETS AND APPLIANCES", 'lovenew',
+#                               [[6954, 6955], [6971, 6972], [7005, 7006], [7022, 7023], [7039, 7040]]))
+#
+# qlist.append(OpinionQuestion("FRIENDSHIPS WOULDN'T BE CLOSE W/O CELL", 'cellfriend',
+#                               [[3852, 3853], [3876, 3877], [3924, 3925], [3948, 3949], [3972, 3973]]))
+# qlist.append(OpinionQuestion("MY CELL PHONE CONNECTS TO SOCIAL WORLD", 'cellsocial',
+#                               [[3857, 3858], [3881, 3882], [3929, 3930], [3953, 3954], [3977, 3978]]))
+# qlist.append(OpinionQuestion("CELL PHONE IS AN EXPRESSION OF WHO I AM", 'cellexpress',
+#                               [[3860, 3861], [3884, 3885], [3932, 3933], [3956, 3957], [3980, 3981]]))
+# qlist.append(OpinionQuestion("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
+#                               [[3867, 3868], [3891, 3892], [3939, 3940], [3963, 3964], [3987, 3988]]))
 
-qlist.append(SingleValueQuestion("CH. OF JESUS CHRIST OF LATTER DAY SNTS", 'lds', [[2650, 2651]]))
+# willingness to spend disposable income
+qlist.append(OpinionQuestion("BUDGET ALLOWS ME TO BUY DESIGNER CLOTHES", 'designclothes',
+                              [[3433, 3434], [3460, 3461], [3514, 3515], [3541, 3542], [3568, 3569]]))
+qlist.append(OpinionQuestion("LIKE A NEW CAR EVERY TWO OR THREE YEARS", 'freqnewcar',
+                              [[3599, 3600], [3635, 3636], [3707, 3708], [3743, 3744], [3779, 3780]]))
+qlist.append(OpinionQuestion("SPEND WHAT I HAVE TO, TO LOOK YOUNGER", 'spendyounger',
+                              [[4019, 4020], [4030, 4031], [4076, 4077], [4095, 4096], [4114, 4115]]))
+qlist.append(OpinionQuestion("I FEEL FINANCIALLY SECURE", 'finsecure',
+                              [[6099, 6100], [6120, 6121], [6162, 6163], [6183, 6184], [6204, 6205]]))
+
+
+# taste for travel & adventure
+qlist.append(OpinionQuestion("I ENJOY TAKING RISKS", 'enjoyrisk',
+                              [[4608, 4609], [4685, 4686], [4839, 4840], [4916, 4917], [4993, 4994]]))
+qlist.append(OpinionQuestion("I DO SOME SPORT/EXERCISE ONCE A WEEK", 'sportsweek',
+                              [[4624, 4625], [4701, 4702], [4855, 4856], [4932, 4933], [5009, 5010]]))
+qlist.append(OpinionQuestion("VEHICLE HANDLE VERY ROUGH TERRAIN IMPNT", 'alltervehicle',
+                              [[3624, 3625], [3660, 3661], [3732, 3733], [3768, 3769], [3804, 3805]]))
+qlist.append(OpinionQuestion("I ENJOY EATING FOREIGN FOODS", 'forgnfood',
+                              [[4285,4286], [4332, 4333], [4426, 4427], [4473, 4474], [4520, 4521]]))
+qlist.append(OpinionQuestion("I AM INTERESTED IN OTHER CULTURES", 'forgnculture',
+                              [[4645, 4646], [4722, 4723], [4876, 4877], [4953, 4954], [5030, 5031]]))
+
+
+
+# additional drivers
+# income
+# qlist.append(SingleValueQuestion("CRUISE SHIP VACATION-TAKEN LST 3 YRS?", 'cruise3yr', [[24199, 24200]]))
+# qlist.append(SingleValueQuestion("FOREIGN TRAVEL - IN LAST 3 YEARS?", 'fgntrav3yr', [[24546, 24547]]))
+# qlist.append(SingleValueQuestion("HOUSEHOLD - $100,000 OR MORE", 'house100K', [[2691, 2692]]))
+#
+# # where to advertise
+# qlist.append(SingleValueQuestion("TRAVEL CHANNEL", 'travchannel', [[9684, 9685]]))
+# qlist.append(SingleValueQuestion("NATIONAL GEOGRAPHIC CHANNEL", 'natgeo', [[9656, 9657]]))
+# qlist.append(SingleValueQuestion("OUTDOOR CHANNEL", 'outdoorchanel', [[9665, 9666]]))
+
 
 survey = Survey('FA15_Data.txt', qlist, 'utf8', verbose=True)
 survey.evaluate_questions()
@@ -261,7 +297,7 @@ scaled_df = survey.get_scaled_values()
 scaled_df.info()
 
 # exploratory factor analysis
-fe = FactorExplore(df=scaled_df, rotation='varimax', method='principal', n_factors=2, impute='drop', verbose=True)
+fe = FactorExplore(df=scaled_df, rotation='varimax', method='principal', n_factors=3, impute='drop', verbose=True)
 fe.get_barlett_sphericity()
 fe.get_kmo()
 ev = fe.get_eigenvalues()
