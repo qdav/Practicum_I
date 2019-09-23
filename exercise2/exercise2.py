@@ -42,6 +42,38 @@ class Question:
         self.count_answers()
 
 
+class CategoryQuestion(Question):
+    def __init__(self, question_txt, question_prefix, col_range, col_value, use_strings=False):
+        """Create a Question object by passing in the location of the columns and other metadata."""
+        super().__init__(question_txt, question_prefix, col_range)
+        self.col_value = col_value
+        self.use_strings = use_strings
+
+    def get_column_names(self):
+        # here, creating combined column/volue column names for uniqueness
+        colname_temp = list()
+        for column in self.col_value:
+            colname_temp.append(self.question_column + "-" + str(column))
+        return colname_temp
+
+
+    def create_final_value(self):
+        df_temp = self.df_question.copy()
+
+        # TODO: enhance this logic to handle duplicate values better
+        # currently, it picks the highest alphabetical value across a row
+        for column in df_temp:
+            df_temp.loc[df_temp[column] == 1, column] = column.replace((self.question_column + '-'), '')
+
+        if self.use_strings:
+            df_temp = df_temp.astype(str)
+        else:
+            df_temp = df_temp.astype(int)
+
+        df_temp[self.question_column] = df_temp.iloc[:, :].apply(max, axis=1)
+        print(f'\nFrequency of {self.question_column} after scale:\n {df_temp[self.question_column].value_counts()}')
+        return df_temp[self.question_column]
+
 class SingleValueQuestion(Question):
     def get_column_names(self):
         names = []
@@ -129,7 +161,8 @@ class Survey:
         """Convert questions into a single 1-5 value."""
         temp_scaled_val = []
         for question in self.question_list:
-            temp_scaled_val.append(question.create_final_value())
+            test = question.create_final_value()
+            temp_scaled_val.append(test)
         return pd.DataFrame(temp_scaled_val).transpose()
 
 
@@ -269,12 +302,13 @@ qlist.append(OpinionQuestion("I ENJOY TAKING RISKS", 'enjoyrisk',
                               [[4608, 4609], [4685, 4686], [4839, 4840], [4916, 4917], [4993, 4994]]))
 qlist.append(OpinionQuestion("I DO SOME SPORT/EXERCISE ONCE A WEEK", 'sportsweek',
                               [[4624, 4625], [4701, 4702], [4855, 4856], [4932, 4933], [5009, 5010]]))
-qlist.append(OpinionQuestion("VEHICLE HANDLE VERY ROUGH TERRAIN IMPNT", 'alltervehicle',
-                              [[3624, 3625], [3660, 3661], [3732, 3733], [3768, 3769], [3804, 3805]]))
-qlist.append(OpinionQuestion("I ENJOY EATING FOREIGN FOODS", 'forgnfood',
+# qlist.append(OpinionQuestion("VEHICLE HANDLE VERY ROUGH TERRAIN IMPNT", 'alltervehicle',
+#                              [[3624, 3625], [3660, 3661], [3732, 3733], [3768, 3769], [3804, 3805]]))
+qlist.append(OpinionQuestion("I ENJOY EATING FOREIGN FOODS", 'frgnfood',
                               [[4285,4286], [4332, 4333], [4426, 4427], [4473, 4474], [4520, 4521]]))
-qlist.append(OpinionQuestion("I AM INTERESTED IN OTHER CULTURES", 'forgnculture',
+qlist.append(OpinionQuestion("I AM INTERESTED IN OTHER CULTURES", 'frgnculture',
                               [[4645, 4646], [4722, 4723], [4876, 4877], [4953, 4954], [5030, 5031]]))
+
 
 
 
@@ -306,19 +340,22 @@ fe.get_factor_loadings()
 fe.get_communalities()
 factor_df = fe.get_transformed_data(scaled_df)
 
+# get additional drivers
+cluster_list = list()
+cluster_list.append(CategoryQuestion("CRUISE SHP VCATION-NUMBER TAKN LST 3 YRS", 'numcruise3yr',
+                              [[24223, 24224], [24224, 24225], [24225, 24226]], [3, 2, 1]))
+cluster_list.append(CategoryQuestion("FOREIGN TRAV-TOTAL #ROUND TRIPS LST 3 YR", 'frgntrav3yr',
+                              [[24549, 24550], [24550, 24551], [24551, 24552], [24552, 24553]], [4, 3, 2, 1]))
+
+cluster_survey = Survey('FA15_Data.txt', cluster_list, 'utf8', verbose=True)
+cluster_survey.evaluate_questions()
+cluster_df = cluster_survey.get_scaled_values()
+
+#cluster_df = pd.concat([scaled_df, cluster_df], axis=1)
+
 # clustering
 ce = ClusterExplore()
-ce.plot_elbow(factor_df)
-ce.get_silhouette(factor_df)
+ce.plot_elbow(cluster_df)
+ce.get_silhouette(cluster_df)
 
 
-
-
-b = 1
-
-
-
-# fa1 = FactorAnalyzer(rotation=None)
-# fa1.fit(scaled_df)
-# rotator = Rotator()
-# rotator.fit_transform(fa1.loadings_)
