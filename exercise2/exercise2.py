@@ -5,6 +5,10 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+import numpy as np
+from sklearn import preprocessing
+
+
 
 class Question:
     def __init__(self, question_txt, question_column, col_range):
@@ -33,7 +37,7 @@ class Question:
         df_temp['total'] = df_temp.sum(axis=1)  # total column
         print(f'\nNumber of check boxes marked for {self.question_column} columns:\n {df_temp["total"].value_counts()}')
 
-    def create_final_value(self):
+    def get_final_value(self):
         pass
 
     def evaluate_question(self):
@@ -57,7 +61,7 @@ class CategoryQuestion(Question):
         return colname_temp
 
 
-    def create_final_value(self):
+    def get_final_value(self):
         df_temp = self.df_question.copy()
 
         # TODO: enhance this logic to handle duplicate values better
@@ -80,7 +84,7 @@ class SingleValueQuestion(Question):
         names.append(self.question_column)
         return names
 
-    def create_final_value(self):
+    def get_final_value(self):
         df_temp = self.df_question.copy()
         print(f'\nFrequency of {self.question_column}:\n {df_temp[self.question_column].value_counts()}')
         return df_temp[self.question_column]
@@ -107,7 +111,7 @@ class OpinionQuestion(Question):
         names.append(self.question_column + "_dis_lot")
         return names
 
-    def create_final_value(self):
+    def get_final_value(self):
         """Convert five column answers into a single 1-5 value."""
         df_temp = self.df_question.copy()
         df_temp.iloc[:, 0].replace(1, 5, inplace=True)
@@ -157,11 +161,11 @@ class Survey:
         for question in self.question_list:
             question.evaluate_question()
 
-    def get_scaled_values(self):
+    def get_final_values(self):
         """Convert questions into a single 1-5 value."""
         temp_scaled_val = []
         for question in self.question_list:
-            test = question.create_final_value()
+            test = question.get_final_value()
             temp_scaled_val.append(test)
         return pd.DataFrame(temp_scaled_val).transpose()
 
@@ -235,7 +239,6 @@ class ClusterExplore():
     def __init__(self ):
         pass
 
-
     def plot_elbow(self, df, n_clusters=10):
         # https://towardsdatascience.com/k-means-clustering-algorithm-applications-evaluation-methods-and-drawbacks-aa03e644b48a
         sse = []
@@ -252,7 +255,6 @@ class ClusterExplore():
         plt.ylabel('Sum of squared distance')
         plt.show()
 
-
     def get_silhouette(self, factor_df, n_clusters=10):
         # https://stackoverflow.com/questions/51138686/how-to-use-silhouette-score-in-k-means-clustering-from-sklearn-library
         range_n_clusters = list(range(2, 10))
@@ -264,70 +266,126 @@ class ClusterExplore():
             score = silhouette_score(factor_df, preds, metric='euclidean')
             print("For n_clusters = {}, silhouette score is {})".format(n_clusters, score))
 
+    def optimalK(self, data, nrefs=3, maxClusters=15):
+        """
+        Calculates KMeans optimal K using Gap Statistic from Tibshirani, Walther, Hastie
+        Params:
+            data: ndarry of shape (n_samples, n_features)
+            nrefs: number of sample reference datasets to create
+            maxClusters: Maximum number of clusters to test for
+        Returns: (gaps, optimalK)
+        https://anaconda.org/milesgranger/gap-statistic/notebook
+        """
+        gaps = np.zeros((len(range(1, maxClusters)),))
+        resultsdf = pd.DataFrame({'clusterCount': [], 'gap': []})
+        for gap_index, k in enumerate(range(1, maxClusters)):
 
-# configure/load survey and questions
+            # Holder for reference dispersion results
+            refDisps = np.zeros(nrefs)
+
+            # For n references, generate random sample and perform kmeans getting resulting dispersion of each loop
+            for i in range(nrefs):
+                # Create new random reference set
+                randomReference = np.random.random_sample(size=data.shape)
+
+                # Fit to it
+                km = KMeans(k)
+                km.fit(randomReference)
+
+                refDisp = km.inertia_
+                refDisps[i] = refDisp
+
+            # Fit cluster to original data and create dispersion
+            km = KMeans(k)
+            km.fit(data)
+
+            origDisp = km.inertia_
+
+            # Calculate gap statistic
+            gap = np.log(np.mean(refDisps)) - np.log(origDisp)
+
+            # Assign this loop's gap statistic to gaps
+            gaps[gap_index] = gap
+
+            resultsdf = resultsdf.append({'clusterCount': k, 'gap': gap}, ignore_index=True)
+
+        return (gaps.argmax() + 1,
+                resultsdf)  # Plus 1 because index of 0 means 1 cluster is optimal, index 2 = 3 clusters are optimal
+
+
+
+# define profile/advertising data
+
+demo_list = list()
+
+#demographcis
+demo_list.append(SingleValueQuestion("HOUSEHOLD - $100,000 OR MORE", 'househ100K', [[2690, 2691]]))
+demo_list.append(CategoryQuestion("GENDER", 'gender',
+                                    [[2382, 2383], [2383, 2384]], [1, 0], use_strings=False))
+# where to advertise
+qlist.append(SingleValueQuestion("TRAVEL CHANNEL", 'travchannel', [[9683, 9684]]))
+qlist.append(SingleValueQuestion("NATIONAL GEOGRAPHIC CHANNEL", 'natgeo', [[9655, 9656]]))
+qlist.append(SingleValueQuestion("OUTDOOR CHANNEL", 'outdoorchanel', [[9664, 9665]]))
+
+demo_survey = Survey('FA15_Data.txt', demo_list, 'utf8', verbose=True)
+demo_survey.evaluate_questions()
+demo_df = demo_survey.get_final_values()
+
+
+
+
+
+# define factor questions
 qlist = list()
 
+# willingness to spend disposable income
+qlist.append(OpinionQuestion("BUDGET ALLOWS ME TO BUY DESIGNER CLOTHES-1", 'designclothes1',
+                              [[3432, 3433], [3459, 3460], [3513, 3514], [3540, 3541], [3567, 3568]]))
+qlist.append(OpinionQuestion("LIKE A NEW CAR EVERY TWO OR THREE YEARS", 'freqnewcar',
+                              [[3598, 3599], [3634, 3635], [3706, 3707], [3742, 3743], [3778, 3779]]))
+qlist.append(OpinionQuestion("SPEND WHAT I HAVE TO, TO LOOK YOUNGER", 'spendyounger',
+                              [[4018, 4019], [4037, 4038], [4075, 4076], [4094, 4095], [4113, 4114]]))
+qlist.append(OpinionQuestion("I FEEL FINANCIALLY SECURE", 'finsecure',
+                              [[6098, 6099], [6119, 6120], [6161, 6162], [6182, 6183], [6203, 6204]]))
+
+# taste for active travel & adventure
+qlist.append(OpinionQuestion("I ENJOY TAKING RISKS", 'enjoyrisk',
+                              [[4607, 4608], [4684, 4685], [4838, 4839], [4915, 4916], [4992, 4993]]))
+qlist.append(OpinionQuestion("I DO SOME SPORT/EXERCISE ONCE A WEEK", 'sportsweek',
+                              [[4623, 4624], [4700, 4701], [4854, 4855], [4931, 4932], [5008, 5009]]))
+qlist.append(OpinionQuestion("VEHICLE HANDLE VERY ROUGH TERRAIN IMPNT", 'alltervehicle',
+                              [[3623, 3624], [3659, 3660], [3731, 3732], [3767, 3768], [3803, 3804]]))
+qlist.append(OpinionQuestion("I ENJOY EATING FOREIGN FOODS", 'frgnfood',
+                              [[4284,4285], [4331, 4332], [4425, 4426], [4472, 4473], [4519, 4520]]))
+qlist.append(OpinionQuestion("I AM INTERESTED IN OTHER CULTURES", 'frgnculture',
+                              [[4644, 4645], [4721, 4722], [4875, 4876], [4952, 4953], [5029, 5030]]))
+
+
 # qlist.append(OpinionQuestion("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
-#                               [[6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]]))
+#                               [[6944, 6945], [6961, 6962], [6995, 6996], [7012, 7013], [7029, 7030]]))
 # qlist.append(OpinionQuestion("PAY ANYTHING FOR ELCTRNC PROD I WANT", 'anyprice',
-#                               [[6946, 6947], [6963, 6964], [6997, 6998], [7014, 7015], [7031, 7032]]))
+#                               [[6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]]))
 # qlist.append(OpinionQuestion("I TRY KEEP UP/DEVELOPMENTS IN TECHNOLOGY", 'keepup',
-#                               [[6953, 6954], [6970, 6971], [7004, 7005], [7021, 7022], [7038, 7039]]))
+#                               [[6952, 6953], [6969, 6970], [7003, 7004], [7020, 7021], [7037, 7038]]))
 # qlist.append(OpinionQuestion("LOVE TO BUY NEW GADGETS AND APPLIANCES", 'lovenew',
-#                               [[6954, 6955], [6971, 6972], [7005, 7006], [7022, 7023], [7039, 7040]]))
+#                               [[6953, 6954], [6970, 6971], [7004, 7005], [7021, 7022], [7038, 7039]]))
 #
 # qlist.append(OpinionQuestion("FRIENDSHIPS WOULDN'T BE CLOSE W/O CELL", 'cellfriend',
-#                               [[3852, 3853], [3876, 3877], [3924, 3925], [3948, 3949], [3972, 3973]]))
+#                               [[3851, 3852], [3875, 3876], [3923, 3924], [3947, 3948], [3971, 3972]]))
 # qlist.append(OpinionQuestion("MY CELL PHONE CONNECTS TO SOCIAL WORLD", 'cellsocial',
-#                               [[3857, 3858], [3881, 3882], [3929, 3930], [3953, 3954], [3977, 3978]]))
+#                               [[3856, 3859], [3880, 3881], [3928, 3929], [3952, 3953], [3976, 3977]]))
 # qlist.append(OpinionQuestion("CELL PHONE IS AN EXPRESSION OF WHO I AM", 'cellexpress',
-#                               [[3860, 3861], [3884, 3885], [3932, 3933], [3956, 3957], [3980, 3981]]))
+#                               [[3859, 3860], [3883, 3884], [3931, 3932], [3955, 3956], [3979, 3980]]))
 # qlist.append(OpinionQuestion("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
-#                               [[3867, 3868], [3891, 3892], [3939, 3940], [3963, 3964], [3987, 3988]]))
+#                               [[3866, 3867], [3890, 3891], [3938, 3939], [3962, 3963], [3986, 3987]]))
 
-# willingness to spend disposable income
-qlist.append(OpinionQuestion("BUDGET ALLOWS ME TO BUY DESIGNER CLOTHES", 'designclothes',
-                              [[3433, 3434], [3460, 3461], [3514, 3515], [3541, 3542], [3568, 3569]]))
-qlist.append(OpinionQuestion("LIKE A NEW CAR EVERY TWO OR THREE YEARS", 'freqnewcar',
-                              [[3599, 3600], [3635, 3636], [3707, 3708], [3743, 3744], [3779, 3780]]))
-qlist.append(OpinionQuestion("SPEND WHAT I HAVE TO, TO LOOK YOUNGER", 'spendyounger',
-                              [[4019, 4020], [4030, 4031], [4076, 4077], [4095, 4096], [4114, 4115]]))
-qlist.append(OpinionQuestion("I FEEL FINANCIALLY SECURE", 'finsecure',
-                              [[6099, 6100], [6120, 6121], [6162, 6163], [6183, 6184], [6204, 6205]]))
-
-
-# taste for travel & adventure
-qlist.append(OpinionQuestion("I ENJOY TAKING RISKS", 'enjoyrisk',
-                              [[4608, 4609], [4685, 4686], [4839, 4840], [4916, 4917], [4993, 4994]]))
-qlist.append(OpinionQuestion("I DO SOME SPORT/EXERCISE ONCE A WEEK", 'sportsweek',
-                              [[4624, 4625], [4701, 4702], [4855, 4856], [4932, 4933], [5009, 5010]]))
-# qlist.append(OpinionQuestion("VEHICLE HANDLE VERY ROUGH TERRAIN IMPNT", 'alltervehicle',
-#                              [[3624, 3625], [3660, 3661], [3732, 3733], [3768, 3769], [3804, 3805]]))
-qlist.append(OpinionQuestion("I ENJOY EATING FOREIGN FOODS", 'frgnfood',
-                              [[4285,4286], [4332, 4333], [4426, 4427], [4473, 4474], [4520, 4521]]))
-qlist.append(OpinionQuestion("I AM INTERESTED IN OTHER CULTURES", 'frgnculture',
-                              [[4645, 4646], [4722, 4723], [4876, 4877], [4953, 4954], [5030, 5031]]))
-
-
-
-
-# additional drivers
-# income
-# qlist.append(SingleValueQuestion("CRUISE SHIP VACATION-TAKEN LST 3 YRS?", 'cruise3yr', [[24199, 24200]]))
-# qlist.append(SingleValueQuestion("FOREIGN TRAVEL - IN LAST 3 YEARS?", 'fgntrav3yr', [[24546, 24547]]))
-# qlist.append(SingleValueQuestion("HOUSEHOLD - $100,000 OR MORE", 'house100K', [[2691, 2692]]))
-#
-# # where to advertise
-# qlist.append(SingleValueQuestion("TRAVEL CHANNEL", 'travchannel', [[9684, 9685]]))
-# qlist.append(SingleValueQuestion("NATIONAL GEOGRAPHIC CHANNEL", 'natgeo', [[9656, 9657]]))
-# qlist.append(SingleValueQuestion("OUTDOOR CHANNEL", 'outdoorchanel', [[9665, 9666]]))
 
 
 survey = Survey('FA15_Data.txt', qlist, 'utf8', verbose=True)
 survey.evaluate_questions()
-scaled_df = survey.get_scaled_values()
+scaled_df = survey.get_final_values()
 #scaled_df.dropna(inplace=True)
+#scaled_df = scaled_df[~(scaled_df == 0).any(axis=1)]
 scaled_df.info()
 
 # exploratory factor analysis
@@ -340,22 +398,47 @@ fe.get_factor_loadings()
 fe.get_communalities()
 factor_df = fe.get_transformed_data(scaled_df)
 
-# get additional drivers
+# define cluster drivers
 cluster_list = list()
 cluster_list.append(CategoryQuestion("CRUISE SHP VCATION-NUMBER TAKN LST 3 YRS", 'numcruise3yr',
-                              [[24223, 24224], [24224, 24225], [24225, 24226]], [3, 2, 1]))
+                              [[24222, 24223], [24223, 24224], [24224, 24225]], [3, 2, 1]))
 cluster_list.append(CategoryQuestion("FOREIGN TRAV-TOTAL #ROUND TRIPS LST 3 YR", 'frgntrav3yr',
-                              [[24549, 24550], [24550, 24551], [24551, 24552], [24552, 24553]], [4, 3, 2, 1]))
+                              [[24548, 24549], [24549, 24550], [24550, 24551], [24551, 24552]], [4, 3, 2, 1]))
+cluster_list.append(OpinionQuestion("WORTH PAYING EXTRA FOR QUALITY GOODS", 'qualgoods',
+                             [[4640, 4641], [4717, 4718], [4871, 4872], [4948, 4949], [5025, 5026]]))
+cluster_list.append(OpinionQuestion("LIKE TO PURSUE CHALLENGE,NOVELTY,CHANGE", 'pursuechng',
+                              [[4673, 4674], [4750, 4751], [4904, 4905], [4981, 4982], [5058, 5059]]))
 
+# retreiving cluster drivers
 cluster_survey = Survey('FA15_Data.txt', cluster_list, 'utf8', verbose=True)
 cluster_survey.evaluate_questions()
-cluster_df = cluster_survey.get_scaled_values()
+cluster_df = cluster_survey.get_final_values()
+cluster_df = pd.concat([factor_df, cluster_df], axis=1)
 
-#cluster_df = pd.concat([scaled_df, cluster_df], axis=1)
+# combining and outputtng factors and cluster drivers
+cluster_df_scale = pd.DataFrame(preprocessing.scale(cluster_df))
+cluster_df_scale.to_csv(r'cluster_drivers.csv')
 
-# clustering
+# cluster analysis
 ce = ClusterExplore()
-ce.plot_elbow(cluster_df)
-ce.get_silhouette(cluster_df)
+ce.plot_elbow(cluster_df_scale)
+ce.get_silhouette(cluster_df_scale)
+
+# k, gapdf = ce.optimalK(data=preprocessing.scale(cluster_df_scale))
+# print (f'Optimal k is: {k} ')
+#
+# plt.plot(gapdf.clusterCount, gapdf.gap, linewidth=3)
+# plt.scatter(gapdf[gapdf.clusterCount == k].clusterCount, gapdf[gapdf.clusterCount == k].gap, s=250, c='r')
+# plt.grid(True)
+# plt.xlabel('Cluster Count')
+# plt.ylabel('Gap Value')
+# plt.title('Gap Values by Cluster Count')
+# plt.show()
+
+
+
+a = 1
+
+
 
 
