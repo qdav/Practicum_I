@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
 class Question:
+    """ Abstract base class for different Question objects. Not intended to be instantiated directly. """
     def __init__(self, question_txt, question_column, col_range):
         self.question_txt = question_txt
         self.question_column = question_column
@@ -43,6 +44,8 @@ class Question:
 
 
 class CategoryQuestion(Question):
+    """ Support for collapsing multiple 1 hot columns into a single column with multiple values"""
+
     def __init__(self, question_txt, question_prefix, col_range, col_value, use_strings=False):
         """Create a Question object by passing in the location of the columns and other metadata."""
         super().__init__(question_txt, question_prefix, col_range)
@@ -50,6 +53,7 @@ class CategoryQuestion(Question):
         self.use_strings = use_strings
 
     def get_column_names(self):
+        """ Get column names for category Question object """
         # here, creating combined column/volue column names for uniqueness
         colname_temp = list()
         for column in self.col_value:
@@ -75,12 +79,14 @@ class CategoryQuestion(Question):
         return df_temp[self.question_column]
 
 class SingleValueQuestion(Question):
+    """ Get the column names for a single value Question object """
     def get_column_names(self):
         names = []
         names.append(self.question_column)
         return names
 
     def get_final_value(self):
+        """ Get the final value for a single value question object """
         df_temp = self.df_question.copy()
         print(f'\nFrequency of {self.question_column}:\n {df_temp[self.question_column].value_counts()}')
         return df_temp[self.question_column]
@@ -119,7 +125,7 @@ class OpinionQuestion(Question):
         return df_temp[self.question_column]
 
 class Survey:
-    """Reads in 5-answer servey questions from a fixed-width file and evaluates/processes"""
+    """Reads in survey questions from a fixed-width file and evaluates/processes"""
     def __init__(self, file, question_list, encoding, read_file=True, load_questions=True, verbose=True):
         """File, questions, and encoding for the Survey"""
         self.file = file
@@ -158,7 +164,7 @@ class Survey:
             question.evaluate_question()
 
     def get_final_values(self):
-        """Convert questions into a single 1-5 value."""
+        """Convert questions into a single value corresponding to the question type."""
         temp_scaled_val = []
         for question in self.question_list:
             test = question.get_final_value()
@@ -167,6 +173,8 @@ class Survey:
 
 
 class FactorExplore:
+    """ Used to evaluate statistical "factors" for a given data set. """
+
     def __init__(self, df, rotation='varimax', method='principal', n_factors=3, impute='drop', verbose=False ):
         """ Build and fit factor model"""
         self.df = df
@@ -184,7 +192,6 @@ class FactorExplore:
 
     def get_barlett_sphericity(self):
         """ Check Bartlett Sphericity """
-
         chi_square_value, p_value = calculate_bartlett_sphericity(scaled_df)
         if self.verbose:
             print(f'Bartlett Sphericity chi square value: {chi_square_value}\n')
@@ -199,6 +206,7 @@ class FactorExplore:
         return kmo_all, kmo_model
 
     def get_factor_loadings(self):
+        """ Get factor loadings of data """
         factor_loadings = pd.DataFrame(self.fa.loadings_)
         factor_loadings.set_index( self.df.columns, inplace=True)
         if self.verbose:
@@ -206,12 +214,14 @@ class FactorExplore:
         return factor_loadings
 
     def get_communalities(self):
+        """ Get communalities of the data """
         df_communalities = pd.DataFrame(self.fa.get_communalities()).set_index(self.df.columns)
         if self.verbose:
             print(f'Communalities\n{df_communalities}\n')
         return df_communalities
 
     def get_eigenvalues(self):
+        """ Get the eigenvalues of a particular set of data """
         ev, v = self.fa.get_eigenvalues()
         df_eignevalues = pd.DataFrame(ev)
         if self.verbose:
@@ -219,6 +229,7 @@ class FactorExplore:
         return df_eignevalues
 
     def scree_plot(self, ev):
+        """ Plot a scree plot for a set of eigenvalues"""
         plt.scatter(range(1,len(ev)+1), ev)
         plt.plot(range(1,len(ev)+1), ev)
         plt.title("Scree Plot")
@@ -228,14 +239,17 @@ class FactorExplore:
         plt.show()
 
     def get_transformed_data(self, df):
+        """ get the individual factors for each observation """
         temp_df = pd.DataFrame(self.fa.transform(df))
         return temp_df
 
 class ClusterExplore():
+    """ A class for general k-means clustering examination """
     def __init__(self ):
         pass
 
     def plot_elbow(self, df, n_clusters=10):
+        """ Create an elbow plot for a range of clusters """
         # https://towardsdatascience.com/k-means-clustering-algorithm-applications-evaluation-methods-and-drawbacks-aa03e644b48a
         sse = []
         list_k = list(range(1, n_clusters))
@@ -252,6 +266,7 @@ class ClusterExplore():
         plt.show()
 
     def get_silhouette(self, factor_df, n_clusters=10):
+        """ show the silhouette values for a range of clusters """
         # https://stackoverflow.com/questions/51138686/how-to-use-silhouette-score-in-k-means-clustering-from-sklearn-library
         range_n_clusters = list(range(2, 10))
         for n_clusters in range_n_clusters:
@@ -263,6 +278,7 @@ class ClusterExplore():
             print("For n_clusters = {}, silhouette score is {})".format(n_clusters, score))
 
     def get_cluster_assignments(self, data, n_clusters=10):
+        """ Determine the cluster assignment for each observation given the model """
         kmeans = KMeans(n_clusters=n_clusters)
         kmeans.fit(data)
         pred = kmeans.predict(data)
