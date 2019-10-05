@@ -3,13 +3,8 @@ from factor_analyzer import FactorAnalyzer
 from factor_analyzer.factor_analyzer import calculate_kmo
 from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity
 import matplotlib.pyplot as plt
-from sklearn import preprocessing
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-import numpy as np
-
-
-
 
 class Question:
     def __init__(self, question_txt, question_column, col_range):
@@ -335,20 +330,20 @@ fe.get_communalities()
 factor_df = fe.get_transformed_data(scaled_df)
 
 # define cluster drivers
-cluster_list = list()
-cluster_list.append(CategoryQuestion("CRUISE SHP VCATION-NUMBER TAKN LST 3 YRS", 'numcruise3yr',
-                              [[24222, 24223], [24223, 24224], [24224, 24225]], [3, 2, 1]))
-cluster_list.append(CategoryQuestion("FOREIGN TRAV-TOTAL #ROUND TRIPS LST 3 YR", 'frgntrav3yr',
-                              [[24548, 24549], [24549, 24550], [24550, 24551], [24551, 24552]], [4, 3, 2, 1]))
-cluster_list.append(OpinionQuestion("WORTH PAYING EXTRA FOR QUALITY GOODS", 'qualgoods',
-                             [[4640, 4641], [4717, 4718], [4871, 4872], [4948, 4949], [5025, 5026]]))
-cluster_list.append(OpinionQuestion("LIKE TO PURSUE CHALLENGE,NOVELTY,CHANGE", 'pursuechng',
-                              [[4673, 4674], [4750, 4751], [4904, 4905], [4981, 4982], [5058, 5059]]))
+driver_list = list()
+driver_list.append(CategoryQuestion("CRUISE SHP VCATION-NUMBER TAKN LST 3 YRS", 'numcruise3yr',
+                                    [[24222, 24223], [24223, 24224], [24224, 24225]], [3, 2, 1]))
+driver_list.append(CategoryQuestion("FOREIGN TRAV-TOTAL #ROUND TRIPS LST 3 YR", 'frgntrav3yr',
+                                    [[24548, 24549], [24549, 24550], [24550, 24551], [24551, 24552]], [4, 3, 2, 1]))
+driver_list.append(OpinionQuestion("WORTH PAYING EXTRA FOR QUALITY GOODS", 'qualgoods',
+                                   [[4640, 4641], [4717, 4718], [4871, 4872], [4948, 4949], [5025, 5026]]))
+driver_list.append(OpinionQuestion("LIKE TO PURSUE CHALLENGE,NOVELTY,CHANGE", 'pursuechng',
+                                   [[4673, 4674], [4750, 4751], [4904, 4905], [4981, 4982], [5058, 5059]]))
 
-cluster_survey = Survey('FA15_Data.txt', cluster_list, 'utf8', verbose=True)
+cluster_survey = Survey('FA15_Data.txt', driver_list, 'utf8', verbose=True)
 cluster_survey.evaluate_questions()
-cluster_df = cluster_survey.get_final_values()
-cluster_df = pd.concat([factor_df, cluster_df], axis=1)
+driver_df = cluster_survey.get_final_values()
+cluster_df = pd.concat([factor_df, driver_df], axis=1)
 
 # combining and outputtng factors and cluster drivers
 #cluster_df_scale = pd.DataFrame(preprocessing.scale(cluster_df))
@@ -359,7 +354,20 @@ cluster_df_scale.to_csv(r'cluster_drivers.csv')
 ce = ClusterExplore()
 ce.plot_elbow(cluster_df_scale)
 #ce.get_silhouette(cluster_df_scale)
-clusters = ce.get_cluster_assignments(cluster_df, n_clusters= 3)
+clusters = ce.get_cluster_assignments(driver_df, n_clusters= 3)
+clusters.rename(columns={ clusters.columns[0]: 'cluster' }, inplace = True)
+clusters['cluster'].value_counts()
+
+# produce a table of means for cluster driver variables
+driver_clusters = pd.concat([cluster_df, clusters], axis=1)
+for x in range(0,3):
+    print(driver_clusters.loc[driver_clusters['cluster'] == x].mean(axis=0))
+
+# produce a table of means for the other relevant variables
+demo_clusters = pd.concat([demo_df, clusters], axis=1)
+for x in range(0,3):
+    print(demo_clusters.loc[demo_clusters['cluster'] == x].mean(axis=0))
+
 
 a = 1
 
