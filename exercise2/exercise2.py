@@ -384,27 +384,3 @@ demo_clusters = pd.concat([demo_df, clusters], axis=1)
 for x in range(0,3):
     print(demo_clusters.loc[demo_clusters['cluster'] == x].mean(axis=0))
 
-
-a = 1
-
-
-# qlist.append(OpinionQuestion("I'M 1ST OF FRNDS HAVE NEW ELCTRNC EQUIP", 'ftech',
-#                               [[6944, 6945], [6961, 6962], [6995, 6996], [7012, 7013], [7029, 7030]]))
-# qlist.append(OpinionQuestion("PAY ANYTHING FOR ELCTRNC PROD I WANT", 'anyprice',
-#                               [[6945, 6946], [6962, 6963], [6996, 6997], [7013, 7014], [7030, 7031]]))
-# qlist.append(OpinionQuestion("I TRY KEEP UP/DEVELOPMENTS IN TECHNOLOGY", 'keepup',
-#                               [[6952, 6953], [6969, 6970], [7003, 7004], [7020, 7021], [7037, 7038]]))
-# qlist.append(OpinionQuestion("LOVE TO BUY NEW GADGETS AND APPLIANCES", 'lovenew',
-#                               [[6953, 6954], [6970, 6971], [7004, 7005], [7021, 7022], [7038, 7039]]))
-#
-# qlist.append(OpinionQuestion("FRIENDSHIPS WOULDN'T BE CLOSE W/O CELL", 'cellfriend',
-#                               [[3851, 3852], [3875, 3876], [3923, 3924], [3947, 3948], [3971, 3972]]))
-# qlist.append(OpinionQuestion("MY CELL PHONE CONNECTS TO SOCIAL WORLD", 'cellsocial',
-#                               [[3856, 3859], [3880, 3881], [3928, 3929], [3952, 3953], [3976, 3977]]))
-# qlist.append(OpinionQuestion("CELL PHONE IS AN EXPRESSION OF WHO I AM", 'cellexpress',
-#                               [[3859, 3860], [3883, 3884], [3931, 3932], [3955, 3956], [3979, 3980]]))
-# qlist.append(OpinionQuestion("I LIKE TO BE CONNECTED TO FRIENDS/FAMILY", 'connectfriends',
-#                               [[3866, 3867], [3890, 3891], [3938, 3939], [3962, 3963], [3986, 3987]]))
-
-
-
